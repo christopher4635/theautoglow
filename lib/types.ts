@@ -10,8 +10,21 @@ export interface User {
   phone: string;
   avatar_url?: string;
   is_active: number;
+  pin?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ContactInquiry {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  vehicle_model?: string;
+  service_requested?: string;
+  message?: string;
+  status: string;
+  created_at: string;
 }
 
 export interface BusinessSettings {

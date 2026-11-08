@@ -24,7 +24,7 @@ import { Notification } from '@/lib/types';
 
 export default function TopNavbar() {
   const router = useRouter();
-  const { currentUser, availableUsers, switchUser } = useAuth();
+  const { currentUser, availableUsers, openPinModal } = useAuth();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,6 +305,17 @@ export default function TopNavbar() {
           )}
         </div>
 
+        {/* Public Website Link */}
+        <Link
+          href="/"
+          target="_blank"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-muted hover:text-charcoal border border-border rounded hover:bg-surface transition-colors"
+          title="Open Public Customer Website"
+        >
+          <ExternalLink className="w-3.5 h-3.5 text-muted" />
+          <span>Public Website</span>
+        </Link>
+
         {/* User Switcher / Profile */}
         <div className="relative">
           <button
@@ -319,7 +330,7 @@ export default function TopNavbar() {
                 {currentUser?.name.split(' ')[0]}
               </div>
               <div className="text-[10px] text-muted leading-tight capitalize">
-                {currentUser?.role.replace('_', ' ')}
+                {currentUser?.role === 'super_admin' ? 'Super Admin' : 'Manager'}
               </div>
             </div>
             <ChevronDown className="w-3 h-3 text-muted ml-1" />
@@ -330,31 +341,48 @@ export default function TopNavbar() {
               <div className="px-3 pb-2 border-b border-border">
                 <div className="font-semibold text-charcoal">{currentUser?.name}</div>
                 <div className="text-[11px] text-muted">{currentUser?.email}</div>
+                <div className="mt-1 inline-block px-1.5 py-0.5 rounded bg-zinc-100 text-[10px] font-mono font-medium text-muted-dark capitalize">
+                  {currentUser?.role === 'super_admin' ? 'Super Admin (Full Access)' : 'Manager (Attendance & Records)'}
+                </div>
               </div>
 
               <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-muted uppercase tracking-wider">
-                Switch Role / Persona:
+                Switch User (Requires PIN):
               </div>
 
               {availableUsers.map((user) => (
                 <button
                   key={user.id}
                   onClick={() => {
-                    switchUser(user.id);
                     setShowUserDropdown(false);
+                    openPinModal(user.role);
                   }}
                   className={cn(
-                    'w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-surface',
+                    'w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-surface transition-colors',
                     currentUser?.id === user.id ? 'bg-surface font-semibold text-charcoal' : 'text-muted-dark'
                   )}
                 >
                   <div>
                     <div>{user.name}</div>
-                    <div className="text-[10px] text-muted capitalize">{user.role.replace('_', ' ')}</div>
+                    <div className="text-[10px] text-muted capitalize">
+                      {user.role === 'super_admin' ? 'Super Admin (PIN 4656)' : 'Manager (Default PIN 1111)'}
+                    </div>
                   </div>
                   {currentUser?.id === user.id && <Check className="w-3.5 h-3.5 text-charcoal" />}
                 </button>
               ))}
+
+              <div className="pt-2 mt-1 border-t border-border px-3">
+                <button
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    openPinModal();
+                  }}
+                  className="w-full text-center py-1 text-[11px] text-muted hover:text-charcoal font-medium bg-surface rounded border border-border"
+                >
+                  Verify / Unlock PIN
+                </button>
+              </div>
             </div>
           )}
         </div>

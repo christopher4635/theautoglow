@@ -7,75 +7,118 @@ interface AuthContextType {
   currentUser: User | null;
   setCurrentUser: (user: User) => void;
   availableUsers: User[];
-  switchUser: (userId: string) => void;
+  isPinModalOpen: boolean;
+  openPinModal: (role?: UserRole) => void;
+  closePinModal: () => void;
+  loginWithPin: (role: UserRole, pin: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
   hasRole: (allowedRoles: UserRole[]) => boolean;
   canAccessFinances: () => boolean;
+  canAccessBilling: () => boolean;
+  canAccessReports: () => boolean;
+  canAccessAuditLogs: () => boolean;
   canManageSettings: () => boolean;
   canManageStaff: () => boolean;
+  canAccessRecords: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PRESET_USERS: User[] = [
+// Only 2 Users as requested: Super Admin (Abhinay) and Manager
+export const SYSTEM_USERS: User[] = [
   {
     id: 'usr-1',
-    name: 'Christopher Basumatary',
-    email: 'owner@theautoglow.in',
+    name: 'Abhinay',
+    email: 'abhinay@theautoglow.in',
     role: 'super_admin',
     phone: '+91 98320 12345',
     is_active: 1,
+    pin: '4656',
     created_at: '2023-01-10',
     updated_at: '2023-01-10',
   },
   {
     id: 'usr-2',
-    name: 'Tashi Lepcha',
+    name: 'Workshop Manager',
     email: 'manager@theautoglow.in',
     role: 'manager',
     phone: '+91 98321 22334',
     is_active: 1,
+    pin: '1111',
     created_at: '2023-03-01',
     updated_at: '2023-03-01',
-  },
-  {
-    id: 'usr-3',
-    name: 'Pema Bhutia',
-    email: 'accounts@theautoglow.in',
-    role: 'accountant',
-    phone: '+91 98322 33445',
-    is_active: 1,
-    created_at: '2023-04-15',
-    updated_at: '2023-04-15',
-  },
-  {
-    id: 'usr-4',
-    name: 'Karma Namgyal',
-    email: 'detailer@theautoglow.in',
-    role: 'staff',
-    phone: '+91 98323 44556',
-    is_active: 1,
-    created_at: '2023-02-15',
-    updated_at: '2023-02-15',
   },
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User>(PRESET_USERS[0]);
+  const [currentUser, setCurrentUser] = useState<User>(SYSTEM_USERS[0]);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('autoglow_user_id');
-    if (saved) {
-      const found = PRESET_USERS.find((u) => u.id === saved);
+    const savedUserId = localStorage.getItem('autoglow_user_id');
+    if (savedUserId) {
+      const found = SYSTEM_USERS.find((u) => u.id === savedUserId);
       if (found) setCurrentUser(found);
     }
   }, []);
 
-  const switchUser = (userId: string) => {
-    const user = PRESET_USERS.find((u) => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('autoglow_user_id', user.id);
+  const openPinModal = (role?: UserRole) => {
+    setIsPinModalOpen(true);
+  };
+
+  const closePinModal = () => {
+    setIsPinModalOpen(false);
+  };
+
+  const loginWithPin = async (
+    role: UserRole,
+    pin: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, pin }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const userObj: User = {
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          phone: data.user.phone || '',
+          is_active: 1,
+          created_at: '2023-01-10',
+          updated_at: new Date().toISOString(),
+        };
+
+        setCurrentUser(userObj);
+        localStorage.setItem('autoglow_user_id', userObj.id);
+        return { success: true };
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        return { success: false, error: errData.error || 'Incorrect PIN entered.' };
+      }
+    } catch {
+      // Local fallback check if network/server is offline
+      const expectedUser = SYSTEM_USERS.find((u) => u.role === role);
+      if (expectedUser) {
+        const expectedPin = role === 'super_admin' ? '4656' : '1111';
+        if (pin === expectedPin) {
+          setCurrentUser(expectedUser);
+          localStorage.setItem('autoglow_user_id', expectedUser.id);
+          return { success: true };
+        }
+      }
+      return { success: false, error: 'Incorrect PIN. Access denied.' };
     }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('autoglow_user_id');
+    setIsPinModalOpen(true);
   };
 
   const hasRole = (allowedRoles: UserRole[]): boolean => {
@@ -84,16 +127,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return allowedRoles.includes(currentUser.role);
   };
 
+  // Manager is limited to attendance and records: strictly NO financial access
   const canAccessFinances = (): boolean => {
-    return hasRole(['super_admin', 'accountant', 'manager']);
+    return currentUser?.role === 'super_admin';
+  };
+
+  const canAccessBilling = (): boolean => {
+    return currentUser?.role === 'super_admin';
+  };
+
+  const canAccessReports = (): boolean => {
+    return currentUser?.role === 'super_admin';
+  };
+
+  const canAccessAuditLogs = (): boolean => {
+    return currentUser?.role === 'super_admin';
   };
 
   const canManageSettings = (): boolean => {
     return currentUser?.role === 'super_admin';
   };
 
+  // Both Abhinay and Manager can manage staff attendance
   const canManageStaff = (): boolean => {
-    return hasRole(['super_admin', 'manager']);
+    return true;
+  };
+
+  // Both Abhinay and Manager can access operational records (CRM, Vehicles, Job Cards, Inspections, Bays, Reminders, Assets)
+  const canAccessRecords = (): boolean => {
+    return true;
   };
 
   return (
@@ -101,12 +163,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentUser,
         setCurrentUser,
-        availableUsers: PRESET_USERS,
-        switchUser,
+        availableUsers: SYSTEM_USERS,
+        isPinModalOpen,
+        openPinModal,
+        closePinModal,
+        loginWithPin,
+        logout,
         hasRole,
         canAccessFinances,
+        canAccessBilling,
+        canAccessReports,
+        canAccessAuditLogs,
         canManageSettings,
         canManageStaff,
+        canAccessRecords,
       }}
     >
       {children}

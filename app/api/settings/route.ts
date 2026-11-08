@@ -30,6 +30,21 @@ export async function POST(request: Request) {
       for (const [key, value] of Object.entries(body)) {
         insertSetting.run(key, String(value));
       }
+
+      // Sync users table if PINs or Names updated
+      if (body.super_admin_pin) {
+        db.prepare("UPDATE users SET pin = ?, name = COALESCE(?, name) WHERE role = 'super_admin'").run(
+          String(body.super_admin_pin),
+          body.super_admin_name || 'Abhinay'
+        );
+      }
+      if (body.manager_pin) {
+        db.prepare("UPDATE users SET pin = ?, name = COALESCE(?, name) WHERE role = 'manager'").run(
+          String(body.manager_pin),
+          body.manager_name || 'Workshop Manager'
+        );
+      }
+
       db.prepare(`
         INSERT INTO audit_logs (id, user_name, action, entity_type, entity_id, details_json)
         VALUES (?, 'Admin', 'SETTINGS_UPDATE', 'settings', 'business_config', ?)

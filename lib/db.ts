@@ -34,6 +34,7 @@ function initSchema(database: Database.Database) {
       avatar_url TEXT,
       is_active INTEGER DEFAULT 1,
       password_hash TEXT,
+      pin TEXT,
       created_at TEXT DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
@@ -653,6 +654,18 @@ function initSchema(database: Database.Database) {
       ip_address TEXT,
       created_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
+
+    CREATE TABLE IF NOT EXISTS contact_inquiries (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT,
+      vehicle_model TEXT,
+      service_requested TEXT,
+      message TEXT,
+      status TEXT DEFAULT 'New',
+      created_at TEXT DEFAULT (datetime('now', 'localtime'))
+    );
   `);
 
   // Check if initial seeding is needed
@@ -686,7 +699,16 @@ function seedInitialData(database: Database.Database) {
     ['customer_prefix', 'CUST-'],
     ['vehicle_prefix', 'VEH-'],
     ['warranty_prefix', 'WAR-AGS-'],
-    ['po_prefix', 'PO-AGS-']
+    ['po_prefix', 'PO-AGS-'],
+    ['super_admin_pin', '4656'],
+    ['super_admin_name', 'Abhinay'],
+    ['manager_pin', '1111'],
+    ['manager_name', 'Workshop Manager'],
+    ['contact_phone', '+91 98320 12345'],
+    ['contact_whatsapp', '+91 98320 12345'],
+    ['contact_email', 'info@theautoglow.in'],
+    ['contact_address', 'National Highway 10, Near Deorali, Gangtok, Sikkim - 737101'],
+    ['working_hours', 'Monday – Saturday: 9:00 AM – 7:30 PM (Sunday Closed)']
   ];
 
   const insertSetting = database.prepare('INSERT OR REPLACE INTO business_settings (key, value) VALUES (?, ?)');
@@ -694,15 +716,13 @@ function seedInitialData(database: Database.Database) {
     insertSetting.run(k, v);
   }
 
-  // Users
+  // Users: Exactly 2 users: Super Admin (Abhinay, PIN 4656) and Manager (PIN 1111)
   const insertUser = database.prepare(`
-    INSERT INTO users (id, name, email, role, phone, is_active)
-    VALUES (?, ?, ?, ?, ?, 1)
+    INSERT INTO users (id, name, email, role, phone, pin, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
   `);
-  insertUser.run('usr-1', 'Christopher Basumatary', 'owner@theautoglow.in', 'super_admin', '+91 98320 12345');
-  insertUser.run('usr-2', 'Tashi Lepcha', 'manager@theautoglow.in', 'manager', '+91 98321 22334');
-  insertUser.run('usr-3', 'Pema Bhutia', 'accounts@theautoglow.in', 'accountant', '+91 98322 33445');
-  insertUser.run('usr-4', 'Karma Namgyal', 'detailer@theautoglow.in', 'staff', '+91 98323 44556');
+  insertUser.run('usr-1', 'Abhinay', 'abhinay@theautoglow.in', 'super_admin', '+91 98320 12345', '4656');
+  insertUser.run('usr-2', 'Workshop Manager', 'manager@theautoglow.in', 'manager', '+91 98321 22334', '1111');
 
   // Service Bays
   const insertBay = database.prepare(`

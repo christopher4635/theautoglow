@@ -66,7 +66,7 @@ export default function Sidebar() {
       items: [
         {
           title: 'Dashboard',
-          href: '/',
+          href: '/dashboard',
           icon: LayoutDashboard,
         },
       ],
@@ -131,12 +131,13 @@ export default function Sidebar() {
           title: 'Invoices & Billing',
           href: '/billing',
           icon: Receipt,
+          roles: ['super_admin'],
         },
         {
           title: 'Payments Received',
           href: '/payments',
           icon: CreditCard,
-          roles: ['super_admin', 'accountant', 'manager'],
+          roles: ['super_admin'],
         },
         {
           title: 'Warranties',
@@ -190,7 +191,7 @@ export default function Sidebar() {
           title: 'Suppliers & Purchases',
           href: '/purchases',
           icon: Truck,
-          roles: ['super_admin', 'manager', 'accountant'],
+          roles: ['super_admin'],
         },
       ],
     },
@@ -202,13 +203,13 @@ export default function Sidebar() {
           title: 'Expenses & P&L',
           href: '/expenses',
           icon: TrendingDown,
-          roles: ['super_admin', 'accountant'],
+          roles: ['super_admin'],
         },
         {
           title: 'Reports & Analytics',
           href: '/reports',
           icon: BarChart3,
-          roles: ['super_admin', 'manager', 'accountant'],
+          roles: ['super_admin'],
         },
         {
           title: 'Audit Logs',
