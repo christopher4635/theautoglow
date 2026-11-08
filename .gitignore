@@ -9,6 +9,7 @@
 # next.js
 /.next/
 /out/
+/public-dist/
 
 # production
 /build

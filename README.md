@@ -2,6 +2,9 @@
 
 A complete, production-ready Car Detailing Shop Business Management ERP & CRM built for **The Autoglow Sikkim** (`theautoglow`), situated in Gangtok, Sikkim.
 
+- **🌐 Live Cloudflare Pages URL**: [https://theautoglow.pages.dev](https://theautoglow.pages.dev)
+- **🐙 GitHub Repository**: [https://github.com/christopher4635/theautoglow](https://github.com/christopher4635/theautoglow)
+
 ---
 
 ## 🌟 Overview & Capabilities
