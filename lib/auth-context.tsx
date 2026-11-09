@@ -74,14 +74,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role: UserRole,
     pin: string
   ): Promise<{ success: boolean; error?: string }> => {
+    const cleanPin = String(pin).trim();
+    if (!cleanPin) {
+      return { success: false, error: 'Please enter your PIN' };
+    }
+
+    // Retrieve locally stored PIN overrides if set by admin
+    const savedSuperAdminPin =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('autoglow_super_admin_pin') || '4656'
+        : '4656';
+    const savedManagerPin =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('autoglow_manager_pin') || '1111'
+        : '1111';
+
+    // 1. Try server API verification first
     try {
       const res = await fetch('/api/auth/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, pin }),
+        body: JSON.stringify({ role, pin: cleanPin }),
       });
 
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         const userObj: User = {
           id: data.user.id,
@@ -96,24 +113,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setCurrentUser(userObj);
         localStorage.setItem('autoglow_user_id', userObj.id);
+        localStorage.setItem('autoglow_authenticated', 'true');
         return { success: true };
-      } else {
+      } else if (!res.ok && contentType.includes('application/json')) {
         const errData = await res.json().catch(() => ({}));
         return { success: false, error: errData.error || 'Incorrect PIN entered.' };
       }
     } catch {
-      // Local fallback check if network/server is offline
-      const expectedUser = SYSTEM_USERS.find((u) => u.role === role);
-      if (expectedUser) {
-        const expectedPin = role === 'super_admin' ? '4656' : '1111';
-        if (pin === expectedPin) {
-          setCurrentUser(expectedUser);
-          localStorage.setItem('autoglow_user_id', expectedUser.id);
-          return { success: true };
-        }
-      }
-      return { success: false, error: 'Incorrect PIN. Access denied.' };
+      // Network or static host fallback
     }
+
+    // 2. Direct client verification (guarantees seamless operation on Cloudflare Pages & offline)
+    const expectedPin = role === 'super_admin' ? savedSuperAdminPin : savedManagerPin;
+    if (cleanPin === expectedPin) {
+      const expectedUser = SYSTEM_USERS.find((u) => u.role === role) || SYSTEM_USERS[0];
+      setCurrentUser(expectedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('autoglow_user_id', expectedUser.id);
+        localStorage.setItem('autoglow_authenticated', 'true');
+      }
+      return { success: true };
+    }
+
+    return { success: false, error: 'Incorrect PIN. Access denied.' };
   };
 
   const logout = () => {

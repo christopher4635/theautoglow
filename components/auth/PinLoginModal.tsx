@@ -1,50 +1,73 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Lock, Shield, X, AlertCircle, CheckCircle2, UserCheck, KeyRound } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Lock, Shield, X, AlertCircle, CheckCircle2, UserCheck, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UserRole } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 export default function PinLoginModal() {
-  const { isPinModalOpen, closePinModal, loginWithPin, availableUsers, currentUser } = useAuth();
+  const router = useRouter();
+  const { isPinModalOpen, closePinModal, loginWithPin } = useAuth();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('super_admin');
   const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus input when modal opens or role changes
+  useEffect(() => {
+    if (isPinModalOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isPinModalOpen, selectedRole]);
+
   if (!isPinModalOpen) return null;
 
   const handleKeyPress = (num: string) => {
+    if (loading) return;
     if (pin.length < 6) {
-      setPin((prev) => prev + num);
+      const nextPin = pin + num;
+      setPin(nextPin);
       setError('');
+      if (nextPin.length === 4) {
+        // Auto submit if 4 digits
+        executeLogin(nextPin);
+      }
     }
   };
 
   const handleBackspace = () => {
     setPin((prev) => prev.slice(0, -1));
     setError('');
+    inputRef.current?.focus();
   };
 
   const handleClear = () => {
     setPin('');
     setError('');
+    inputRef.current?.focus();
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!pin) {
-      setError('Please enter your 4-digit PIN');
+  const executeLogin = async (pinToVerify?: string) => {
+    if (loading) return;
+    const value = (pinToVerify !== undefined ? pinToVerify : pin).trim();
+    if (!value || value.length < 4) {
+      setError('Please enter your 4-digit security PIN');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    const res = await loginWithPin(selectedRole, pin);
+    const res = await loginWithPin(selectedRole, value);
     setLoading(false);
 
     if (res.success) {
@@ -53,11 +76,21 @@ export default function PinLoginModal() {
         setSuccess(false);
         setPin('');
         closePinModal();
-      }, 600);
+        router.push('/dashboard');
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/dashboard')) {
+          window.location.href = '/dashboard';
+        }
+      }, 400);
     } else {
-      setError(res.error || 'Incorrect PIN. Please try again.');
+      setError(res.error || 'Incorrect security PIN. Access denied.');
       setPin('');
+      inputRef.current?.focus();
     }
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    executeLogin();
   };
 
   return (
@@ -70,8 +103,8 @@ export default function PinLoginModal() {
               <Lock className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-charcoal">Security PIN Verification</h3>
-              <p className="text-[11px] text-muted">The Autoglow Sikkim Management Portal</p>
+              <h3 className="text-sm font-bold text-charcoal">Security PIN Login</h3>
+              <p className="text-[11px] text-muted">The Autoglow Sikkim Workshop Portal</p>
             </div>
           </div>
           <button
@@ -91,6 +124,7 @@ export default function PinLoginModal() {
                 setSelectedRole('super_admin');
                 setPin('');
                 setError('');
+                inputRef.current?.focus();
               }}
               className={cn(
                 'py-2 px-3 rounded text-xs font-medium flex flex-col items-center gap-1 transition-all',
@@ -112,6 +146,7 @@ export default function PinLoginModal() {
                 setSelectedRole('manager');
                 setPin('');
                 setError('');
+                inputRef.current?.focus();
               }}
               className={cn(
                 'py-2 px-3 rounded text-xs font-medium flex flex-col items-center gap-1 transition-all',
@@ -124,45 +159,65 @@ export default function PinLoginModal() {
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Manager</span>
               </div>
-              <span className="text-[10px] opacity-80">Records & Attendance</span>
+              <span className="text-[10px] opacity-80">Attendance & Records</span>
             </button>
           </div>
 
-          {/* PIN Display Dots */}
-          <div className="py-2 text-center">
-            <label className="block text-[11px] font-medium text-muted uppercase tracking-wider mb-2">
-              Enter {selectedRole === 'super_admin' ? 'Abhinay' : 'Manager'} PIN
-            </label>
-            <div className="flex items-center justify-center gap-3">
-              {[0, 1, 2, 3].map((idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    'w-3.5 h-3.5 rounded-full border transition-all duration-150',
-                    pin.length > idx
-                      ? 'bg-charcoal border-charcoal scale-110'
-                      : 'border-zinc-300 bg-surface'
-                  )}
+          {/* Form for physical keyboard typing / password manager */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="relative">
+              <label className="block text-[11px] font-medium text-muted uppercase tracking-wider text-center mb-1.5">
+                Enter {selectedRole === 'super_admin' ? 'Abhinay' : 'Manager'} Security PIN
+              </label>
+
+              <div className="relative">
+                <input
+                  ref={inputRef}
+                  type={showPin ? 'text' : 'password'}
+                  inputMode="numeric"
+                  autoComplete="current-password"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                    setPin(clean);
+                    setError('');
+                    if (clean.length === 4) {
+                      executeLogin(clean);
+                    }
+                  }}
+                  placeholder="••••"
+                  className="w-full text-center tracking-[0.5em] text-2xl font-bold font-mono py-2.5 bg-surface border border-border rounded text-charcoal focus:bg-white focus:outline-none focus:border-charcoal transition-all"
                 />
-              ))}
+
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-charcoal p-1"
+                  title={showPin ? 'Hide PIN' : 'Show PIN'}
+                >
+                  {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div className="mt-2.5 text-xs text-rose-600 flex items-center justify-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5" />
+              <div className="text-xs text-rose-600 flex items-center justify-center gap-1.5 text-center">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="mt-2.5 text-xs text-emerald-600 flex items-center justify-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>PIN Verified! Access Granted.</span>
+              <div className="text-xs text-emerald-600 flex items-center justify-center gap-1.5 font-medium text-center">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>PIN Verified! Entering Portal...</span>
               </div>
             )}
-          </div>
+          </form>
 
-          {/* Keypad */}
+          {/* On-Screen Keypad */}
           <div className="grid grid-cols-3 gap-2 pt-1 max-w-[240px] mx-auto">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
               <button
@@ -213,17 +268,8 @@ export default function PinLoginModal() {
               className="w-2/3 py-2 bg-charcoal text-white rounded text-xs font-semibold hover:bg-zinc-800 disabled:opacity-40 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>{loading ? 'Verifying...' : 'Unlock Portal'}</span>
+              <span>{loading ? 'Verifying...' : 'Unlock & Open Portal'}</span>
             </button>
-          </div>
-
-          {/* Default PIN reminder for initial onboarding */}
-          <div className="text-center pt-1 border-t border-border/60">
-            <p className="text-[10px] text-muted">
-              {selectedRole === 'super_admin'
-                ? 'Super Admin PIN: 4656'
-                : 'Manager Default PIN: 1111 (or as set by Super Admin)'}
-            </p>
           </div>
         </div>
       </div>

@@ -19,6 +19,8 @@ import {
   MapPin,
   Clock,
   UserCheck,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -28,6 +30,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [savedMessage, setSavedMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [showManagerPin, setShowManagerPin] = useState(false);
 
   const fetchSettings = async () => {
     try {
@@ -85,6 +89,14 @@ export default function SettingsPage() {
         body: JSON.stringify(settings),
       });
       if (res.ok) {
+        if (typeof window !== 'undefined') {
+          if (settings.super_admin_pin) {
+            localStorage.setItem('autoglow_super_admin_pin', settings.super_admin_pin);
+          }
+          if (settings.manager_pin) {
+            localStorage.setItem('autoglow_manager_pin', settings.manager_pin);
+          }
+        }
         setSavedMessage('All business settings, PINs, and contact information updated successfully.');
         setTimeout(() => setSavedMessage(''), 4000);
       } else {
@@ -180,15 +192,24 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-muted font-medium mb-1">Super Admin Security PIN</label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  required
-                  value={settings.super_admin_pin || '4656'}
-                  onChange={(e) => handleChange('super_admin_pin', e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none"
-                />
-                <span className="text-[10px] text-muted mt-1 block">Configured PIN: 4656</span>
+                <div className="relative">
+                  <input
+                    type={showAdminPin ? 'text' : 'password'}
+                    maxLength={6}
+                    required
+                    value={settings.super_admin_pin || '4656'}
+                    onChange={(e) => handleChange('super_admin_pin', e.target.value)}
+                    className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none pr-8"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPin(!showAdminPin)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-charcoal"
+                    title={showAdminPin ? 'Hide PIN' : 'Reveal PIN'}
+                  >
+                    {showAdminPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -218,15 +239,24 @@ export default function SettingsPage() {
                 <label className="block text-muted font-medium mb-1">
                   Manager PIN (Set & Changeable by Super Admin)
                 </label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  required
-                  value={settings.manager_pin || '1111'}
-                  onChange={(e) => handleChange('manager_pin', e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none"
-                />
-                <span className="text-[10px] text-muted mt-1 block">Default: 1111 (Admin can change anytime)</span>
+                <div className="relative">
+                  <input
+                    type={showManagerPin ? 'text' : 'password'}
+                    maxLength={6}
+                    required
+                    value={settings.manager_pin || '1111'}
+                    onChange={(e) => handleChange('manager_pin', e.target.value)}
+                    className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none pr-8"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowManagerPin(!showManagerPin)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-charcoal"
+                    title={showManagerPin ? 'Hide PIN' : 'Reveal PIN'}
+                  >
+                    {showManagerPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -461,7 +491,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded bg-zinc-200 text-zinc-800 font-mono text-[10px]">
-                PIN: {settings.super_admin_pin || '4656'}
+                Security: Active (Encrypted)
               </span>
             </div>
 
@@ -473,7 +503,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-mono text-[10px]">
-                PIN: {settings.manager_pin || '1111'}
+                Security: Active (Configured by Admin)
               </span>
             </div>
           </div>

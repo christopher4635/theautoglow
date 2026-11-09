@@ -365,7 +365,9 @@ export default function TopNavbar() {
                   <div>
                     <div>{user.name}</div>
                     <div className="text-[10px] text-muted capitalize">
-                      {user.role === 'super_admin' ? 'Super Admin (PIN 4656)' : 'Manager (Default PIN 1111)'}
+                      {user.role === 'super_admin'
+                        ? 'Super Admin (Full Access)'
+                        : 'Workshop Manager (Attendance & Records)'}
                     </div>
                   </div>
                   {currentUser?.id === user.id && <Check className="w-3.5 h-3.5 text-charcoal" />}
