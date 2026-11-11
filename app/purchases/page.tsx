@@ -199,6 +199,7 @@ export default function PurchasesPage() {
       {/* TAB 1: PURCHASE ORDERS */}
       {activeTab === 'purchases' && (
         <div className="bg-white border border-border rounded overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -261,6 +262,7 @@ export default function PurchasesPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

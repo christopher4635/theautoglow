@@ -500,6 +500,7 @@ function BillingContent() {
               </div>
 
               {/* Items Table */}
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse border border-border">
                 <thead>
                   <tr className="bg-surface border-b border-border text-[10px] font-semibold uppercase tracking-wider text-muted">
@@ -526,6 +527,7 @@ function BillingContent() {
                   ))}
                 </tbody>
               </table>
+              </div>
 
               {/* Totals & Tax Calculation Breakdown */}
               <div className="flex justify-end pt-2">

@@ -887,7 +887,7 @@ function JobCardsContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div>
                     <label className="block text-muted text-[10px] font-medium mb-0.5">Paint Condition</label>
                     <select

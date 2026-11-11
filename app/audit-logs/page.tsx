@@ -65,7 +65,8 @@ export default function AuditLogsPage() {
 
       {/* Logs Table */}
       <div className="bg-white border border-border rounded overflow-hidden">
-        <table className="w-full text-left border-collapse text-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
               <th className="py-2.5 px-4">Timestamp</th>
@@ -113,6 +114,7 @@ export default function AuditLogsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

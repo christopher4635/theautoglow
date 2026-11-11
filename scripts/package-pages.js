@@ -38,4 +38,11 @@ function copyFolderSync(from, to) {
 }
 
 copyFolderSync(nextStatic, distNextStatic);
+
+// Copy public/* (e.g., /images/*) to public-dist
+const publicDir = path.join(process.cwd(), 'public');
+if (fs.existsSync(publicDir)) {
+  copyFolderSync(publicDir, distDir);
+}
+
 console.log('Successfully packaged public-dist for Cloudflare Pages deployment!');

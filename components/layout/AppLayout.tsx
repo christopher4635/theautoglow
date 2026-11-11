@@ -12,7 +12,12 @@ import { AuthProvider, useAuth } from '@/lib/auth-context';
 function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated, authLoaded, openPinModal } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const isPublicLanding = pathname === '/' || pathname === '/index.html';
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isPublicLanding && authLoaded && !isAuthenticated) {
@@ -77,11 +82,11 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <PinLoginModal />
-      <div className="min-h-screen bg-surface">
-        <Sidebar />
-        <TopNavbar />
-        <main className="pl-64 pt-16 min-h-screen">
-          <div className="p-6 max-w-7xl mx-auto">{children}</div>
+      <div className="min-h-screen bg-surface overflow-x-hidden">
+        <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <TopNavbar onMenuToggle={() => setMobileMenuOpen((prev) => !prev)} />
+        <main className="pl-0 lg:pl-64 pt-16 min-h-screen">
+          <div className="p-3 sm:p-6 max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
     </>

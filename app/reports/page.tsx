@@ -121,7 +121,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border text-xs">
+      <div className="flex items-center gap-2 border-b border-border text-xs overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab('financial')}
           className={cn(
@@ -242,6 +242,7 @@ export default function ReportsPage() {
           {/* TAB 2: SERVICE VOLUMES */}
           {activeTab === 'services' && (
             <div className="bg-white border border-border rounded overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -262,12 +263,14 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
           {/* TAB 3: CUSTOMER LIFETIME VALUE */}
           {activeTab === 'customers' && (
             <div className="bg-white border border-border rounded overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -290,12 +293,14 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
           {/* TAB 4: STAFF PRODUCTIVITY */}
           {activeTab === 'staff' && (
             <div className="bg-white border border-border rounded overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -316,12 +321,14 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
           {/* TAB 5: CONSUMABLES USAGE */}
           {activeTab === 'consumables' && (
             <div className="bg-white border border-border rounded overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -342,6 +349,7 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

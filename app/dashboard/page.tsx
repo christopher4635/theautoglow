@@ -76,7 +76,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Date Filter Buttons */}
-        <div className="flex items-center gap-1 bg-white border border-border rounded p-1 text-xs">
+        <div className="flex flex-wrap items-center gap-1 bg-white border border-border rounded p-1 text-xs">
           {[
             { id: 'today', label: 'Today' },
             { id: 'yesterday', label: 'Yesterday' },

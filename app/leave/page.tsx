@@ -304,6 +304,7 @@ export default function LeaveManagementPage() {
       {/* TAB 2: APPLICATIONS LIST & APPROVAL */}
       {activeTab === 'applications' && (
         <div className="bg-white border border-border rounded overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -357,12 +358,14 @@ export default function LeaveManagementPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* TAB 3: LEAVE BALANCES */}
       {activeTab === 'balances' && (
         <div className="bg-white border border-border rounded overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-surface border-b border-border text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -387,6 +390,7 @@ export default function LeaveManagementPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

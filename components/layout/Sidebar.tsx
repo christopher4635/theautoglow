@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronRight,
   Shield,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
@@ -48,7 +49,12 @@ interface NavSection {
   items: NavItem[];
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { currentUser, hasRole } = useAuth();
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -233,23 +239,49 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-border h-screen flex flex-col fixed left-0 top-0 z-30 select-none">
-      {/* Brand Header */}
-      <div className="h-16 px-5 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded bg-charcoal text-white flex items-center justify-center font-bold text-sm tracking-wide">
-            AG
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-charcoal/50 backdrop-blur-xs lg:hidden"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={cn(
+          'w-64 bg-white border-r border-border h-screen flex flex-col fixed left-0 top-0 z-50 lg:z-30 select-none transition-transform duration-200 ease-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        {/* Brand Header */}
+        <div className="h-16 px-5 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded bg-charcoal text-white flex items-center justify-center font-bold text-sm tracking-wide">
+              AG
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-charcoal tracking-tight leading-tight">
+                The Autoglow
+              </h1>
+              <p className="text-[10px] text-muted uppercase tracking-wider font-medium">
+                Sikkim Detailing Studio
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-charcoal tracking-tight leading-tight">
-              The Autoglow
-            </h1>
-            <p className="text-[10px] text-muted uppercase tracking-wider font-medium">
-              Sikkim Detailing Studio
-            </p>
-          </div>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="lg:hidden p-1.5 rounded text-muted hover:text-charcoal hover:bg-surface transition-colors"
+              aria-label="Close navigation menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-      </div>
 
       {/* Navigation Sections */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
@@ -291,8 +323,9 @@ export default function Sidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
+                        onClick={() => onClose?.()}
                         className={cn(
-                          'flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-medium transition-colors',
+                          'flex items-center justify-between px-2.5 py-2 lg:py-1.5 rounded text-xs font-medium transition-colors',
                           isActive
                             ? 'bg-surface text-charcoal font-semibold border-l-2 border-charcoal pl-2'
                             : 'text-muted-dark hover:bg-surface hover:text-charcoal'
@@ -329,6 +362,7 @@ export default function Sidebar() {
           </span>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -18,12 +18,17 @@ import {
   ExternalLink,
   Car,
   LogOut,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { formatDate, cn } from '@/lib/utils';
 import { Notification } from '@/lib/types';
 
-export default function TopNavbar() {
+interface TopNavbarProps {
+  onMenuToggle?: () => void;
+}
+
+export default function TopNavbar({ onMenuToggle }: TopNavbarProps) {
   const router = useRouter();
   const { currentUser, availableUsers, openPinModal, logout, canAccessFinances } = useAuth();
 
@@ -138,24 +143,35 @@ export default function TopNavbar() {
   }, [searchQuery]);
 
   return (
-    <header className="h-16 bg-white border-b border-border fixed top-0 right-0 left-64 z-20 px-6 flex items-center justify-between">
-      {/* Global Search Bar */}
-      <div className="relative w-96">
-        <div className="relative flex items-center">
-          <Search className="w-4 h-4 text-muted absolute left-3 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
-            placeholder="Search customers, vehicles, job cards, invoices..."
-            className="w-full pl-9 pr-4 py-1.5 bg-surface border border-border rounded text-xs text-charcoal placeholder:text-muted focus:outline-none focus:border-charcoal focus:bg-white transition-colors"
-          />
-        </div>
+    <header className="h-16 bg-white border-b border-border fixed top-0 right-0 left-0 lg:left-64 z-20 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        {/* Mobile Sidebar Toggle */}
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          className="lg:hidden p-2 rounded border border-border text-charcoal hover:bg-surface shrink-0 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
 
-        {/* Search Results Dropdown */}
-        {showSearchDropdown && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-border rounded shadow-card z-50 max-h-80 overflow-y-auto">
+        {/* Global Search Bar */}
+        <div className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md lg:w-96">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 text-muted absolute left-2.5 sm:left-3 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+              placeholder="Search customers, vehicles, jobs..."
+              className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 bg-surface border border-border rounded text-xs text-charcoal placeholder:text-muted focus:outline-none focus:border-charcoal focus:bg-white transition-colors"
+            />
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearchDropdown && (
+            <div className="fixed sm:absolute left-3 right-3 sm:left-0 sm:right-0 top-16 sm:top-full mt-1 bg-white border border-border rounded shadow-card z-50 max-h-80 overflow-y-auto">
             {isSearching ? (
               <div className="p-3 text-xs text-muted text-center">Searching database...</div>
             ) : searchResults.length === 0 ? (
@@ -185,10 +201,11 @@ export default function TopNavbar() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
         {/* Date Display */}
         <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted font-mono bg-surface px-2.5 py-1 border border-border rounded">
           <Calendar className="w-3.5 h-3.5 text-muted-dark" />
@@ -199,10 +216,10 @@ export default function TopNavbar() {
         <div className="relative">
           <button
             onClick={() => setShowQuickAction(!showQuickAction)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-charcoal text-white rounded text-xs font-medium hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 bg-charcoal text-white rounded text-xs font-medium hover:bg-zinc-800 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Create</span>
+            <span className="hidden sm:inline">Create</span>
             <ChevronDown className="w-3 h-3 opacity-70" />
           </button>
 
@@ -272,7 +289,7 @@ export default function TopNavbar() {
           </button>
 
           {showNotifDropdown && (
-            <div className="absolute right-0 top-full mt-1.5 w-80 bg-white border border-border rounded shadow-card z-50 text-xs">
+            <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-full mt-1.5 sm:w-80 bg-white border border-border rounded shadow-card z-50 text-xs">
               <div className="px-3 py-2.5 border-b border-border flex items-center justify-between bg-surface-subtle">
                 <span className="font-semibold text-charcoal">Notifications</span>
                 {unreadCount > 0 && (
