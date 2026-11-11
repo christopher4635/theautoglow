@@ -38,3 +38,6 @@ next-env.d.ts
 # sqlite wal/shm temp files
 *.db-wal
 *.db-shm
+
+# wrangler state
+.wrangler/

@@ -73,28 +73,37 @@ export default function SettingsPage() {
     setErrorMessage('');
 
     // Validate PIN lengths
-    if (settings.super_admin_pin && settings.super_admin_pin.length < 4) {
-      setErrorMessage('Super Admin PIN must be at least 4 digits.');
+    const cleanAdminPin = (settings.super_admin_pin || '').trim();
+    const cleanManagerPin = (settings.manager_pin || '').trim();
+
+    if (cleanAdminPin && cleanAdminPin.length < 4) {
+      setErrorMessage('Super Admin PIN / password must be at least 4 characters.');
       return;
     }
-    if (settings.manager_pin && settings.manager_pin.length < 4) {
-      setErrorMessage('Manager PIN must be at least 4 digits.');
+    if (cleanManagerPin && cleanManagerPin.length < 4) {
+      setErrorMessage('Manager PIN / password must be at least 4 characters.');
       return;
     }
+
+    const payload = {
+      ...settings,
+      ...(cleanAdminPin ? { super_admin_pin: cleanAdminPin } : {}),
+      ...(cleanManagerPin ? { manager_pin: cleanManagerPin } : {}),
+    };
 
     try {
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         if (typeof window !== 'undefined') {
-          if (settings.super_admin_pin) {
-            localStorage.setItem('autoglow_super_admin_pin', settings.super_admin_pin);
+          if (cleanAdminPin) {
+            localStorage.setItem('autoglow_super_admin_pin', cleanAdminPin);
           }
-          if (settings.manager_pin) {
-            localStorage.setItem('autoglow_manager_pin', settings.manager_pin);
+          if (cleanManagerPin) {
+            localStorage.setItem('autoglow_manager_pin', cleanManagerPin);
           }
         }
         setSavedMessage('All business settings, PINs, and contact information updated successfully.');
@@ -184,20 +193,20 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   required
-                  value={settings.super_admin_name || 'Abhinay'}
+                  value={settings.super_admin_name ?? 'Abhinay'}
                   onChange={(e) => handleChange('super_admin_name', e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-muted font-medium mb-1">Super Admin Security PIN</label>
+                <label className="block text-muted font-medium mb-1">Super Admin Security PIN / Password</label>
                 <div className="relative">
                   <input
                     type={showAdminPin ? 'text' : 'password'}
-                    maxLength={6}
+                    maxLength={24}
                     required
-                    value={settings.super_admin_pin || '4656'}
+                    value={settings.super_admin_pin ?? ''}
                     onChange={(e) => handleChange('super_admin_pin', e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none pr-8"
                   />
@@ -229,7 +238,7 @@ export default function SettingsPage() {
                 <label className="block text-muted font-medium mb-1">Manager Designation</label>
                 <input
                   type="text"
-                  value={settings.manager_name || 'Workshop Manager'}
+                  value={settings.manager_name ?? 'Workshop Manager'}
                   onChange={(e) => handleChange('manager_name', e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal focus:outline-none"
                 />
@@ -237,14 +246,14 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-muted font-medium mb-1">
-                  Manager PIN (Set & Changeable by Super Admin)
+                  Manager PIN / Password (Set & Changeable by Super Admin)
                 </label>
                 <div className="relative">
                   <input
                     type={showManagerPin ? 'text' : 'password'}
-                    maxLength={6}
+                    maxLength={24}
                     required
-                    value={settings.manager_pin || '1111'}
+                    value={settings.manager_pin ?? ''}
                     onChange={(e) => handleChange('manager_pin', e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-border rounded text-xs text-charcoal font-mono tracking-widest font-bold focus:outline-none pr-8"
                   />

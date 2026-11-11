@@ -17,6 +17,7 @@ import {
   TrendingDown,
   ExternalLink,
   Car,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { formatDate, cn } from '@/lib/utils';
@@ -24,7 +25,7 @@ import { Notification } from '@/lib/types';
 
 export default function TopNavbar() {
   const router = useRouter();
-  const { currentUser, availableUsers, openPinModal } = useAuth();
+  const { currentUser, availableUsers, openPinModal, logout, canAccessFinances } = useAuth();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -231,22 +232,26 @@ export default function TopNavbar() {
                 <Users className="w-3.5 h-3.5 text-muted" />
                 <span>Register Customer</span>
               </Link>
-              <Link
-                href="/billing?action=new"
-                onClick={() => setShowQuickAction(false)}
-                className="flex items-center gap-2 px-3 py-2 text-charcoal hover:bg-surface"
-              >
-                <Receipt className="w-3.5 h-3.5 text-muted" />
-                <span>Generate Invoice</span>
-              </Link>
-              <Link
-                href="/expenses?action=new"
-                onClick={() => setShowQuickAction(false)}
-                className="flex items-center gap-2 px-3 py-2 text-charcoal hover:bg-surface"
-              >
-                <TrendingDown className="w-3.5 h-3.5 text-muted" />
-                <span>Record Expense</span>
-              </Link>
+              {canAccessFinances() && (
+                <>
+                  <Link
+                    href="/billing?action=new"
+                    onClick={() => setShowQuickAction(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-charcoal hover:bg-surface"
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-muted" />
+                    <span>Generate Invoice</span>
+                  </Link>
+                  <Link
+                    href="/expenses?action=new"
+                    onClick={() => setShowQuickAction(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-charcoal hover:bg-surface"
+                  >
+                    <TrendingDown className="w-3.5 h-3.5 text-muted" />
+                    <span>Record Expense</span>
+                  </Link>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -374,7 +379,7 @@ export default function TopNavbar() {
                 </button>
               ))}
 
-              <div className="pt-2 mt-1 border-t border-border px-3">
+              <div className="pt-2 mt-1 border-t border-border px-3 space-y-1.5">
                 <button
                   onClick={() => {
                     setShowUserDropdown(false);
@@ -382,7 +387,17 @@ export default function TopNavbar() {
                   }}
                   className="w-full text-center py-1 text-[11px] text-muted hover:text-charcoal font-medium bg-surface rounded border border-border"
                 >
-                  Verify / Unlock PIN
+                  Verify / Switch PIN
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUserDropdown(false);
+                    logout();
+                  }}
+                  className="w-full text-center py-1 text-[11px] text-rose-600 hover:bg-rose-50 font-medium rounded border border-rose-200 flex items-center justify-center gap-1"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Lock / Sign Out</span>
                 </button>
               </div>
             </div>

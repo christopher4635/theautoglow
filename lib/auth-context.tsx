@@ -7,7 +7,10 @@ interface AuthContextType {
   currentUser: User | null;
   setCurrentUser: (user: User) => void;
   availableUsers: User[];
+  isAuthenticated: boolean;
+  authLoaded: boolean;
   isPinModalOpen: boolean;
+  pinModalRole: UserRole;
   openPinModal: (role?: UserRole) => void;
   closePinModal: () => void;
   loginWithPin: (role: UserRole, pin: string) => Promise<{ success: boolean; error?: string }>;
@@ -33,7 +36,6 @@ export const SYSTEM_USERS: User[] = [
     role: 'super_admin',
     phone: '+91 98320 12345',
     is_active: 1,
-    pin: '4656',
     created_at: '2023-01-10',
     updated_at: '2023-01-10',
   },
@@ -44,7 +46,6 @@ export const SYSTEM_USERS: User[] = [
     role: 'manager',
     phone: '+91 98321 22334',
     is_active: 1,
-    pin: '1111',
     created_at: '2023-03-01',
     updated_at: '2023-03-01',
   },
@@ -52,17 +53,35 @@ export const SYSTEM_USERS: User[] = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(SYSTEM_USERS[0]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoaded, setAuthLoaded] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinModalRole, setPinModalRole] = useState<UserRole>('super_admin');
 
   useEffect(() => {
-    const savedUserId = localStorage.getItem('autoglow_user_id');
-    if (savedUserId) {
-      const found = SYSTEM_USERS.find((u) => u.id === savedUserId);
-      if (found) setCurrentUser(found);
+    try {
+      const authed = localStorage.getItem('autoglow_authenticated') === 'true';
+      const savedUserId = localStorage.getItem('autoglow_user_id');
+      const savedUserName = localStorage.getItem('autoglow_user_name');
+
+      if (authed && savedUserId) {
+        const found = SYSTEM_USERS.find((u) => u.id === savedUserId);
+        if (found) {
+          setCurrentUser(savedUserName ? { ...found, name: savedUserName } : found);
+          setIsAuthenticated(true);
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    } finally {
+      setAuthLoaded(true);
     }
   }, []);
 
   const openPinModal = (role?: UserRole) => {
+    if (role) {
+      setPinModalRole(role);
+    }
     setIsPinModalOpen(true);
   };
 
@@ -76,20 +95,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     const cleanPin = String(pin).trim();
     if (!cleanPin) {
-      return { success: false, error: 'Please enter your PIN' };
+      return { success: false, error: 'Please enter your PIN or password.' };
     }
 
-    // Retrieve locally stored PIN overrides if set by admin
-    const savedSuperAdminPin =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('autoglow_super_admin_pin') || '4656'
-        : '4656';
-    const savedManagerPin =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('autoglow_manager_pin') || '1111'
-        : '1111';
+    const storedAdmin =
+      typeof window !== 'undefined' ? localStorage.getItem('autoglow_super_admin_pin')?.trim() : '';
+    const storedManager =
+      typeof window !== 'undefined' ? localStorage.getItem('autoglow_manager_pin')?.trim() : '';
 
-    // 1. Try server API verification first
+    const savedSuperAdminPin = storedAdmin && storedAdmin.length >= 4 ? storedAdmin : '4656';
+    const savedManagerPin = storedManager && storedManager.length >= 4 ? storedManager : '1111';
+
+    // 1. Verify against live backend API (D1 on Cloudflare Pages / SQLite locally)
     try {
       const res = await fetch('/api/auth/pin', {
         method: 'POST',
@@ -112,34 +129,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         setCurrentUser(userObj);
-        localStorage.setItem('autoglow_user_id', userObj.id);
-        localStorage.setItem('autoglow_authenticated', 'true');
+        setIsAuthenticated(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('autoglow_user_id', userObj.id);
+          localStorage.setItem('autoglow_user_name', userObj.name);
+          localStorage.setItem('autoglow_authenticated', 'true');
+          localStorage.setItem(
+            role === 'super_admin' ? 'autoglow_super_admin_pin' : 'autoglow_manager_pin',
+            cleanPin
+          );
+        }
         return { success: true };
       } else if (!res.ok && contentType.includes('application/json')) {
         const errData = await res.json().catch(() => ({}));
-        return { success: false, error: errData.error || 'Incorrect PIN entered.' };
+        return { success: false, error: errData.error || 'Incorrect PIN or password entered.' };
       }
     } catch {
-      // Network or static host fallback
+      // Network or static offline fallback
     }
 
-    // 2. Direct client verification (guarantees seamless operation on Cloudflare Pages & offline)
+    // 2. Fallback client verification if API is unreachable offline
     const expectedPin = role === 'super_admin' ? savedSuperAdminPin : savedManagerPin;
     if (cleanPin === expectedPin) {
       const expectedUser = SYSTEM_USERS.find((u) => u.role === role) || SYSTEM_USERS[0];
       setCurrentUser(expectedUser);
+      setIsAuthenticated(true);
       if (typeof window !== 'undefined') {
         localStorage.setItem('autoglow_user_id', expectedUser.id);
+        localStorage.setItem('autoglow_user_name', expectedUser.name);
         localStorage.setItem('autoglow_authenticated', 'true');
       }
       return { success: true };
     }
 
-    return { success: false, error: 'Incorrect PIN. Access denied.' };
+    return { success: false, error: 'Incorrect PIN or password. Access denied.' };
   };
 
   const logout = () => {
-    localStorage.removeItem('autoglow_user_id');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('autoglow_user_id');
+      localStorage.removeItem('autoglow_user_name');
+      localStorage.removeItem('autoglow_authenticated');
+    }
+    setIsAuthenticated(false);
+    setPinModalRole('super_admin');
     setIsPinModalOpen(true);
   };
 
@@ -149,36 +182,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return allowedRoles.includes(currentUser.role);
   };
 
-  // Manager is limited to attendance and records: strictly NO financial access
-  const canAccessFinances = (): boolean => {
-    return currentUser?.role === 'super_admin';
-  };
-
-  const canAccessBilling = (): boolean => {
-    return currentUser?.role === 'super_admin';
-  };
-
-  const canAccessReports = (): boolean => {
-    return currentUser?.role === 'super_admin';
-  };
-
-  const canAccessAuditLogs = (): boolean => {
-    return currentUser?.role === 'super_admin';
-  };
-
-  const canManageSettings = (): boolean => {
-    return currentUser?.role === 'super_admin';
-  };
-
-  // Both Abhinay and Manager can manage staff attendance
-  const canManageStaff = (): boolean => {
-    return true;
-  };
-
-  // Both Abhinay and Manager can access operational records (CRM, Vehicles, Job Cards, Inspections, Bays, Reminders, Assets)
-  const canAccessRecords = (): boolean => {
-    return true;
-  };
+  const canAccessFinances = (): boolean => currentUser?.role === 'super_admin';
+  const canAccessBilling = (): boolean => currentUser?.role === 'super_admin';
+  const canAccessReports = (): boolean => currentUser?.role === 'super_admin';
+  const canAccessAuditLogs = (): boolean => currentUser?.role === 'super_admin';
+  const canManageSettings = (): boolean => currentUser?.role === 'super_admin';
+  const canManageStaff = (): boolean => true;
+  const canAccessRecords = (): boolean => true;
 
   return (
     <AuthContext.Provider
@@ -186,7 +196,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentUser,
         setCurrentUser,
         availableUsers: SYSTEM_USERS,
+        isAuthenticated,
+        authLoaded,
         isPinModalOpen,
+        pinModalRole,
         openPinModal,
         closePinModal,
         loginWithPin,

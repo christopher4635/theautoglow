@@ -1,5 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "theautoglow",
-  "pages_build_output_dir": "./public-dist"
+  "compatibility_date": "2024-11-01",
+  "pages_build_output_dir": "./public-dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "theautoglow-db",
+      "database_id": "d3e29637-493b-45dc-89ab-23d67e967e6f"
+    }
+  ]
 }
